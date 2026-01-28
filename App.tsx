@@ -1,73 +1,100 @@
-import "./global.css";
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { VIBE_THEMES, GENRES } from './src/constants/vibes';
+import "./global.css"; // 🛑 REQUIRED FOR TAILWIND
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, FlatList, ActivityIndicator, SafeAreaView } from 'react-native';
+import { fetchTrendingMovies } from './src/services/tmdb'; // Import your logic
+import { VIBE_THEMES, GENRE_MAP, GENRES } from './src/constants/vibes';
 
 export default function App() {
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await fetchTrendingMovies();
+      setMovies(data);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+
+  // 🧠 Logic for movie feelings (Vibes) [cite: 2026-01-28]
+  const getVibe = (ids: number[]) => {
+    if (!ids) return VIBE_THEMES.CHILL;
+    if (ids.includes(28) || ids.includes(12)) return VIBE_THEMES.HYPE;
+    if (ids.includes(10749)) return VIBE_THEMES.HAPPY;
+    if (ids.includes(18)) return VIBE_THEMES.FEELS;
+    if (ids.includes(27)) return VIBE_THEMES.SCARED;
+    return VIBE_THEMES.CHILL;
+  };
+
   return (
-    <View className="flex-1 bg-cinema-950 px-4 pt-16">
+    <SafeAreaView className="flex-1 bg-cinema-950 px-4 pt-10">
       {/* 🍿 HEADER */}
       <View className="flex-row items-center justify-between mb-8">
         <Text className="text-4xl font-black text-white italic tracking-tighter">GTC</Text>
-        <View className="h-10 w-10 rounded-full bg-corn items-center justify-center">
-          <Text className="font-bold">P</Text>
-        </View>
+        <Image 
+          source={require('./assets/1.png')} 
+          className="h-10 w-10 rounded-full border border-corn" 
+        />
       </View>
 
-      {/* 🏛️ CLASSIC MODE (Genres) */}
-      <Text className="text-slate-400 font-bold mb-3 uppercase tracking-widest text-xs">Classic Categories</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-none mb-10">
-        {GENRES.map((genre) => (
-          <TouchableOpacity key={genre} className="mr-3 px-6 py-2 rounded-2xl bg-cinema-900 border border-cinema-800">
-            <Text className="text-white font-medium">{genre}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* 🧪 THE TRICKY UX TRIAL (Feeling vs Genre) */}
-      <Text className="text-slate-400 font-bold mb-4 uppercase tracking-widest text-xs">The Vibe Check (Trial)</Text>
-      
-      {/* CARD 1: HEARTFELT ROMANCE */}
-      <View className="bg-cinema-900 rounded-3xl p-4 border border-cinema-800 mb-4">
-        <View className="flex-row gap-4">
-          <View className="h-32 w-24 bg-slate-800 rounded-xl overflow-hidden">
-             <Image source={{ uri: 'https://image.tmdb.org/t/p/w500/m03iE43vLktqfxTE0Znn97ds9LB.jpg' }} className="flex-1" />
-          </View>
-          <View className="flex-1 justify-center">
-            <Text className="text-white text-xl font-bold mb-1">A Walk to Remember</Text>
-            <Text className="text-slate-500 font-medium mb-3">Romance • 2002</Text>
-            
-            {/* THE FEELING PILL */}
-            <View className={`self-start px-3 py-1 rounded-full border ${VIBE_THEMES.FEELS.border} bg-cinema-950 flex-row items-center`}>
-              <Text className="mr-2 text-lg">{VIBE_THEMES.FEELS.emoji}</Text>
-              <Text className={`font-bold uppercase text-[10px] ${VIBE_THEMES.FEELS.color}`}>
-                {VIBE_THEMES.FEELS.label}
-              </Text>
-            </View>
-          </View>
-        </View>
+      {/* 🏛️ CATEGORY BAR */}
+      <View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-none mb-10">
+          {GENRES.map((genre) => (
+            <TouchableOpacity key={genre} className="mr-3 px-6 py-2 rounded-2xl bg-cinema-900 border border-cinema-800">
+              <Text className="text-white font-medium">{genre}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
-      {/* CARD 2: PURE JOY ANIMATION */}
-      <View className="bg-cinema-900 rounded-3xl p-4 border border-cinema-800">
-        <View className="flex-row gap-4">
-          <View className="h-32 w-24 bg-slate-800 rounded-xl overflow-hidden">
-             <Image source={{ uri: 'https://image.tmdb.org/t/p/w500/p978OuOs6Asv96v9CO9SAtvNIDS.jpg' }} className="flex-1" />
-          </View>
-          <View className="flex-1 justify-center">
-            <Text className="text-white text-xl font-bold mb-1">Despicable Me</Text>
-            <Text className="text-slate-500 font-medium mb-3">Animation • 2010</Text>
-            
-            {/* THE FEELING PILL */}
-            <View className={`self-start px-3 py-1 rounded-full border ${VIBE_THEMES.HAPPY.border} bg-cinema-950 flex-row items-center`}>
-              <Text className="mr-2 text-lg">{VIBE_THEMES.HAPPY.emoji}</Text>
-              <Text className={`font-bold uppercase text-[10px] ${VIBE_THEMES.HAPPY.color}`}>
-                {VIBE_THEMES.HAPPY.label}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
-    </View>
+      {loading ? (
+        <ActivityIndicator color="#FFD700" size="large" className="mt-20" />
+      ) : (
+        <FlatList
+          data={movies}
+          keyExtractor={(item: any) => item.id.toString()}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => {
+            const vibe = getVibe(item.genre_ids);
+            const firstId = item.genre_ids?.[0];
+            const genreName = firstId ? (GENRE_MAP[firstId] || "Movie") : "Trending";
+
+            return (
+              <View className="bg-cinema-900 rounded-3xl p-4 border border-cinema-800 mb-4 flex-row gap-4 shadow-xl">
+                {/* 🎞️ MOVIE POSTER [cite: 2026-01-28] */}
+                <Image 
+                  source={{ uri: `https://image.tmdb.org/t/p/w500${item.poster_path}` }} 
+                  className="h-32 w-24 rounded-2xl bg-slate-800 shadow-2xl"
+                />
+                
+                <View className="flex-1 justify-center">
+                  <Text className="text-white text-lg font-black mb-1" numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  
+                  {/* ⭐ IMDb RATING */}
+                  <View className="flex-row items-center mb-3">
+                    <View className="bg-[#f5c518] px-1.5 py-0.5 rounded-sm mr-2">
+                      <Text className="text-[10px] font-black text-black">IMDb</Text>
+                    </View>
+                    <Text className="text-white font-bold text-xs">{item.vote_average.toFixed(1)}</Text>
+                  </View>
+
+                  {/* 😊 VIBE PILL */}
+                  <View className={`self-start px-3 py-1.5 rounded-full border ${vibe.border} bg-cinema-950 flex-row items-center`}>
+                    <Text className="mr-2 text-base">{vibe.emoji}</Text>
+                    <Text className={`font-black uppercase text-[9px] tracking-tighter ${vibe.color}`}>
+                      {genreName} • {vibe.label}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            );
+          }}
+        />
+      )}
+    </SafeAreaView>
   );
 }
