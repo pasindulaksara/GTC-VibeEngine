@@ -9,17 +9,14 @@ export default function SplashScreen({ navigation }: any) {
     transform: [{ scale: scale.value }],
   }));
 
-  useEffect(() => {
-    // 🧠 The GTC Heartbeat: No video, just smooth energy
-    scale.value = withRepeat(withSpring(1.15), -1, true);
-    
-    // 🚀 Slide into Home after the verified 2.5s delay
-    const timer = setTimeout(() => {
-      navigation.replace('Home');
-    }, 2500);
-
-    return () => clearTimeout(timer);
-  }, []);
+  // Inside SplashScreen.tsx
+useEffect(() => {
+  scale.value = withRepeat(withSpring(1.15), -1, true);
+  const timer = setTimeout(() => {
+    navigation.replace('Quiz'); // 🎯 Change 'Home' to 'Quiz'
+  }, 2500);
+  return () => clearTimeout(timer);
+}, [navigation]);
 
   return (
     <View className="flex-1 bg-cinema-950 items-center justify-center">
