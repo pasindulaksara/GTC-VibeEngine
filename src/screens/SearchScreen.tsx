@@ -1,54 +1,83 @@
-import React from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, FlatList, Image, TouchableOpacity, SafeAreaView } from 'react-native';
+import { fetchTrendingMovies, searchMovies, getPosterUrl } from '../services/tmdb';
 
-export default function SearchScreen() {
+export default function SearchScreen({ navigation }: any) {
+  const [query, setQuery] = useState('');
+  const [topMovies, setTopMovies] = useState([]);
+  const [results, setResults] = useState([]);
+
+  useEffect(() => {
+    const loadTop = async () => {
+      const data = await fetchTrendingMovies();
+      setTopMovies(data.slice(0, 5)); // Populate "Top in Sri Lanka"
+    };
+    loadTop();
+  }, []);
+
+  const handleSearch = async (text: string) => {
+    setQuery(text);
+    if (text.length > 2) {
+      const data = await searchMovies(text);
+      setResults(data);
+    } else {
+      setResults([]);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-cinema-950 px-6">
-      {/* 🍿 1. INTENT INPUT [cite: 2026-02-02] */}
-      <View className="mt-8 mb-8">
-        <Text className="text-corn font-black text-xs uppercase tracking-[5px] mb-2">Omni-Intent Search</Text>
-        <View className="bg-cinema-900 rounded-3xl p-5 border-2 border-corn shadow-2xl">
-          <TextInput 
-            placeholder="Tell Pop what's on your mind..." 
-            placeholderTextColor="#64748b"
-            multiline
-            className="text-white font-bold text-xl min-h-[100px] text-left align-top"
+      <Text className="text-corn font-black text-[10px] uppercase tracking-[4px] mt-6 mb-4">Omni-Intent Search</Text>
+      
+      {/* SEARCH INPUT */}
+      <View className="border-2 border-corn rounded-[30px] p-6 mb-8 bg-cinema-900/50">
+        <TextInput
+          className="text-white text-2xl font-black"
+          placeholder="What's the vibe?"
+          placeholderTextColor="#475569"
+          value={query}
+          onChangeText={handleSearch}
+        />
+      </View>
+
+      {/* TOP IN SRI LANKA (From your screenshot) */}
+      {!query && (
+        <View>
+          <View className="flex-row justify-between items-center mb-6">
+            <Text className="text-white text-xl font-black">Top in Sri Lanka 🇱🇰</Text>
+            <Text className="text-corn font-bold text-xs">VIEW ALL</Text>
+          </View>
+          <FlatList
+            horizontal
+            data={topMovies}
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item: any) => item.id.toString()}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => navigation.navigate('Detail', { movie: item })}>
+                <Image 
+                  source={{ uri: getPosterUrl(item.poster_path) }} 
+                  className="h-52 w-36 rounded-[25px] mr-4 bg-cinema-900 border border-cinema-800"
+                />
+              </TouchableOpacity>
+            )}
           />
         </View>
-      </View>
+      )}
 
-      {/* 🧠 2. SUGGESTED INTENTS [cite: 2026-02-02] */}
-      <View className="mb-10">
-        <Text className="text-slate-500 font-bold text-sm mb-4">Try something like...</Text>
-        <View className="flex-row flex-wrap gap-3">
-          {[
-            "Rainy Friday Night 🌧️", 
-            "Mind-Bending Noir 🧠", 
-            "LOR 2 Saga Link 💍", 
-            "Adrenaline Spike 🔥"
-          ].map((intent) => (
-            <TouchableOpacity key={intent} className="bg-cinema-900 px-4 py-3 rounded-2xl border border-cinema-800">
-              <Text className="text-white font-medium text-xs">{intent}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* 🎭 3. TRENDING NOW (BY COUNTRY) [cite: 2026-02-02] */}
-      <View>
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-white font-black text-lg">Top in Sri Lanka 🇱🇰</Text>
-          <Text className="text-corn font-bold text-xs">VIEW ALL</Text>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {[1, 2, 3, 4].map((i) => (
-            <View key={i} className="mr-4">
-              <View className="h-44 w-32 bg-cinema-900 rounded-3xl border border-cinema-800" />
-              <View className="h-2 w-16 bg-cinema-800 rounded-full mt-3" />
-            </View>
-          ))}
-        </ScrollView>
-      </View>
+      {/* SEARCH RESULTS */}
+      <FlatList
+        data={results}
+        keyExtractor={(item: any) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            className="flex-row items-center mb-4 bg-cinema-900 p-4 rounded-3xl"
+            onPress={() => navigation.navigate('Detail', { movie: item })}
+          >
+            <Image source={{ uri: getPosterUrl(item.poster_path) }} className="h-20 w-14 rounded-xl mr-4" />
+            <Text className="text-white font-bold">{item.title}</Text>
+          </TouchableOpacity>
+        )}
+      />
     </SafeAreaView>
   );
 }

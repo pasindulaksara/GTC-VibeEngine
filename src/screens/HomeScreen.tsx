@@ -1,72 +1,81 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, SafeAreaView, TextInput } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Image, FlatList } from 'react-native';
+import { fetchTrendingMovies, getPosterUrl } from '../services/tmdb'; // 🔌 Your Engine [cite: 2026-01-29]
 
-// 🎭 Vibe Constants from the Bible [cite: 2026-02-01, 2026-02-02]
 const VIBES = [
-  { id: 'hype', emoji: '🔥', label: 'Hype', color: 'bg-vibe-hype' },
-  { id: 'smart', emoji: '🧠', label: 'Smart', color: 'bg-indigo-600' },
-  { id: 'feels', emoji: '😭', label: 'Feels', color: 'bg-vibe-happy' },
-  { id: 'chill', emoji: '😊', label: 'Chill', color: 'bg-vibe-chill' },
+  { id: 28, emoji: '🔥', label: 'HYPE BEAST' },
+  { id: 878, emoji: '🧠', label: 'BRAINIAC' },
+  { id: 27, emoji: '🦉', label: 'NIGHT OWL' },
+  { id: 35, emoji: '😂', label: 'JESTER' },
 ];
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }: any) {
+  const [trending, setTrending] = useState([]);
+
+  useEffect(() => {
+    const loadTrending = async () => {
+      const data = await fetchTrendingMovies();
+      setTrending(data.slice(0, 10)); // Top 10 trending
+    };
+    loadTrending();
+  }, []);
+
   return (
-    <SafeAreaView className="flex-1 bg-cinema-950 px-6">
-      
-      {/* 🍿 1. CONVERSATIONAL HEADER [cite: 2026-02-02] */}
-      <View className="mt-8 mb-10">
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-4xl font-black text-white italic tracking-tighter">GTC</Text>
-          <Image source={require('../../assets/1.png')} className="h-12 w-12 rounded-full border-2 border-corn" />
+    <SafeAreaView className="flex-1 bg-cinema-950">
+      <ScrollView showsVerticalScrollIndicator={false}>
+        
+        {/* 🍿 HEADER */}
+        <View className="px-6 mt-10 mb-8">
+          <Text className="text-corn font-black text-xs uppercase tracking-[5px]">Grab The Corn</Text>
+          <Text className="text-white text-5xl font-black italic mt-2">VIBE PULSE</Text>
         </View>
-        <Text className="text-slate-400 text-lg font-bold">Yo, Pasindu! 👋</Text>
-        <Text className="text-white text-3xl font-black leading-tight">What’s your vibe right now?</Text>
-      </View>
 
-      {/* 🔍 2. OMNI-INTENT SEARCH [cite: 2026-02-02] */}
-      <View className="bg-cinema-900 rounded-3xl p-4 border border-cinema-800 flex-row items-center mb-10 shadow-xl">
-        <Text className="text-2xl mr-3">🍿</Text>
-        <TextInput 
-          placeholder="I need a movie for a rainy night..." 
-          placeholderTextColor="#64748b"
-          className="text-white font-bold flex-1 text-lg"
-        />
-      </View>
+        {/* 🏎️ TRENDING HORIZONTAL LIST [cite: 2026-01-29] */}
+        <View className="mb-10">
+          <Text className="px-6 text-slate-500 font-black text-[10px] uppercase tracking-widest mb-4">Trending Now</Text>
+          <FlatList
+            horizontal
+            data={trending}
+            keyExtractor={(item: any) => item.id.toString()}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingLeft: 24 }}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                onPress={() => navigation.navigate('Detail', { movie: item })}
+                className="mr-4"
+              >
+                <Image 
+                  source={{ uri: getPosterUrl(item.poster_path) }} 
+                  className="h-60 w-40 rounded-[30px] bg-cinema-900 border border-cinema-800"
+                />
+              </TouchableOpacity>
+            )}
+          />
+        </View>
 
-      {/* 🎭 3. EMOJI VIBE BAR [cite: 2026-02-01] */}
-      <View className="mb-10">
-        <Text className="text-corn font-black text-xs uppercase tracking-[4px] mb-4">Select Feeling</Text>
-        <View className="flex-row justify-between">
-          {VIBES.map((v) => (
-            <TouchableOpacity key={v.id} className="items-center">
-              <View className={`${v.color} h-16 w-16 rounded-[24px] items-center justify-center shadow-lg`}>
-                <Text className="text-3xl">{v.emoji}</Text>
-              </View>
-              <Text className="text-white font-bold mt-2 text-[10px] uppercase tracking-widest">{v.label}</Text>
+        {/* 🎭 VIBE GRID */}
+        <View className="px-6 flex-row flex-wrap justify-between mb-20">
+          <Text className="w-full text-slate-500 font-black text-[10px] uppercase tracking-widest mb-4">Select Your Tribe</Text>
+          {VIBES.map((vibe) => (
+            <TouchableOpacity 
+              key={vibe.id}
+              onPress={() => navigation.navigate('Results', { genreId: vibe.id, vibeLabel: vibe.label })}
+              className="w-[48%] bg-cinema-900 aspect-square rounded-[40px] mb-4 items-center justify-center border border-cinema-800 shadow-2xl"
+            >
+              <Text className="text-6xl mb-2">{vibe.emoji}</Text>
+              <Text className="text-white font-black text-[10px] tracking-widest">{vibe.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
-      </View>
 
-      {/* 📅 4. FRIDAY NIGHT SPECIAL [cite: 2026-02-02] */}
-      <View>
-        <Text className="text-corn font-black text-xs uppercase tracking-[4px] mb-4">Weekly Special</Text>
-        <TouchableOpacity className="bg-cinema-900 rounded-[40px] p-6 border border-cinema-800 overflow-hidden">
-          <View className="flex-row justify-between items-start">
-            <View className="flex-1">
-              <Text className="text-vibe-hype font-black text-xs uppercase mb-1">Friday Night Movie</Text>
-              <Text className="text-white text-2xl font-black leading-tight mb-4">The "Heart-Pounding" Collection</Text>
-              <View className="bg-cinema-950 self-start px-4 py-2 rounded-full border border-cinema-800">
-                <Text className="text-white font-bold text-[10px]">EXPLORE NOW →</Text>
-              </View>
-            </View>
-            <View className="h-24 w-24 bg-cinema-800 rounded-3xl items-center justify-center">
-              <Text className="text-4xl">🎬</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
 
+      {/* 🧭 NAVIGATION BAR */}
+      <View className="flex-row justify-around p-8 bg-cinema-900/90 absolute bottom-0 w-full rounded-t-[50px] border-t border-cinema-800 backdrop-blur-md">
+        <TouchableOpacity onPress={() => navigation.navigate('Vault')}><Text className="text-2xl">🔒</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Home')}><Text className="text-2xl">🏠</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile')}><Text className="text-2xl">👤</Text></TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
